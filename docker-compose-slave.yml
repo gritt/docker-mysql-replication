@@ -9,7 +9,7 @@ services:
       - ./docker/database/data/mysql-slave:/var/lib/mysql:rw,cached
       - ./docker/database/config/mysql-slave:/etc/mysql/conf.d:rw,cached
     environment:
-      - MYSQL_SLAVE_ROOT_PASSWORD=${MYSQL_SLAVE_ROOT_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_SLAVE_ROOT_PASSWORD}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     expose:
