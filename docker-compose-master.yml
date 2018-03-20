@@ -7,7 +7,7 @@ services:
     volumes:
       - ./docker/database/dumps:/dumps:rw,cached
       - ./docker/database/data/mysql-master:/var/lib/mysql:rw,cached
-      - ./docker/database/config/mysql-master:/etc/mysql/conf.d/
+      - ./docker/database/config/mysql-master:/etc/mysql/conf.d:rw,cached
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
