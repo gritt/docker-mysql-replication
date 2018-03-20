@@ -22,9 +22,13 @@ mysql --host mysqlmaster -uroot -p$MYSQL_MASTER_PASSWORD -AN -e 'flush privilege
 echo "* Set MySQL01 as master on MySQL02"
 
 MYSQL01_Position=$(eval "mysql --host mysqlmaster -uroot -p$MYSQL_MASTER_PASSWORD -e 'show master status \G' | grep Position | sed -n -e 's/^.*: //p'")
+
 MYSQL01_File=$(eval "mysql --host mysqlmaster -uroot -p$MYSQL_MASTER_PASSWORD -e 'show master status \G'     | grep File     | sed -n -e 's/^.*: //p'")
+
 MASTER_IP=$(eval "getent hosts mysqlmaster|awk '{print \$1}'")
+
 echo $MASTER_IP
+
 mysql --host mysqlslave -uroot -p$MYSQL_SLAVE_PASSWORD -AN -e "CHANGE MASTER TO master_host='mysqlmaster', master_port=3306, \
         master_user='$MYSQL_REPLICATION_USER', master_password='$MYSQL_REPLICATION_PASSWORD', master_log_file='$MYSQL01_File', \
         master_log_pos=$MYSQL01_Position;"
@@ -40,14 +44,18 @@ mysql --host mysqlmaster -uroot -p$MYSQL_MASTER_PASSWORD -AN -e "CHANGE MASTER T
         master_user='$MYSQL_REPLICATION_USER', master_password='$MYSQL_REPLICATION_PASSWORD', master_log_file='$MYSQL02_File', \
         master_log_pos=$MYSQL02_Position;"
 
+
 echo "* Start Slave on both Servers"
 mysql --host mysqlslave -uroot -p$MYSQL_SLAVE_PASSWORD -AN -e "start slave;"
+
 
 echo "Increase the max_connections to 2000"
 mysql --host mysqlmaster -uroot -p$MYSQL_MASTER_PASSWORD -AN -e 'set GLOBAL max_connections=2000';
 mysql --host mysqlslave -uroot -p$MYSQL_SLAVE_PASSWORD -AN -e 'set GLOBAL max_connections=2000';
 
+
 mysql --host mysqlslave -uroot -p$MYSQL_MASTER_PASSWORD -e "show slave status \G"
+
 
 echo "MySQL servers created!"
 echo "--------------------"
