@@ -1,0 +1,31 @@
+version: '2'
+services:
+
+  database:
+    image: mysql:5.7
+    container_name: database
+    volumes:
+      - ./docker/database/dumps:/dumps:rw,cached
+      - ./docker/database/data/mysql-slave:/var/lib/mysql:rw,cached
+      - ./docker/database/config/mysql-slave:/etc/mysql/conf.d:rw,cached
+    environment:
+      - MYSQL_SLAVE_ROOT_PASSWORD=${MYSQL_SLAVE_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    restart: always
+
+  mysql_configure:
+    image: mysql:5.7
+    container_name: mysql_configure
+    environment:
+      - MYSQL_MASTER_ROOT_PASSWORD=${MYSQL_MASTER_ROOT_PASSWORD}
+      - MYSQL_MASTER_ADDRESS=${MYSQL_MASTER_ADDRESS}
+      - MYSQL_SLAVE_ADDRESS=${MYSQL_SLAVE_ADDRESS}
+      - MYSQL_SLAVE_ROOT_PASSWORD=${MYSQL_SLAVE_ROOT_PASSWORD}
+    volumes:
+      - ./docker/database/config/mysql_connector.sh:/tmp/mysql_connector.sh
+    command: /bin/bash -x /tmp/mysql_connector.sh
