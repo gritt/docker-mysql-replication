@@ -2,54 +2,59 @@
 
 BASE_PATH=$(dirname $0)
 
-echo "waiting mysql"
+
+echo "waiting MYSQL.."
 sleep 60
 
 
-echo "stopping mysql slaves"
+echo "stopping slave in SLAVE MYSQL"
 mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"stop slave;";
 mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"reset slave all;";
 
-mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"reset slave all;";
+
+echo "stopping slave in MASTER MYSQL"
+mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"stop slave;";
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"reset slave all;";
 
 
-echo "creating replication user"
+echo "creating replication user in MASTER MYSQL"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"create user '$MYSQL_REPLICATION_USER'@'%';"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"grant replication slave on *.* to '$MYSQL_REPLICATION_USER'@'%' identified by '$MYSQL_REPLICATION_PASSWORD';"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"flush privileges;"
 
 
+echo "creating replication user in SLAVE MYSQL"
 mysql --host $MYSQL_SLAVE_ADDRESS -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"create user '$MYSQL_REPLICATION_USER'@'%';"
 mysql --host $MYSQL_SLAVE_ADDRESS -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"grant replication slave on *.* to '$MYSQL_REPLICATION_USER'@'%' identified by '$MYSQL_REPLICATION_PASSWORD';"
 mysql --host $MYSQL_SLAVE_ADDRESS -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"flush privileges;"
 
 
-
-#MYSQL01_Position=$(eval "mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -e 'show master status \G' | grep Position | sed -n -e 's/^.*: //p'")
-#MYSQL01_File=$(eval "mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -e 'show master status \G'     | grep File     | sed -n -e 's/^.*: //p'")
-
-#MYSQL02_Position=$(eval "mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e 'show master status \G' | grep Position | sed -n -e 's/^.*: //p'")
-#MYSQL02_File=$(eval "mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e 'show master status \G'     | grep File     | sed -n -e 's/^.*: //p'")
+echo "getting MASTER MYSQL config"
+Master_Position="$(mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -e 'show master status \G' | grep Position | grep -o '[0-9]*')"
+Master_File="$(mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -e 'show master status \G' | grep File | sed -n -e 's/^.*: //p')"
 
 
-echo "sync master to slave"
+echo "getting SLAVE MYSQL config"
+Slave_Position="$(mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e 'show master status \G' | grep Position | grep -o '[0-9]*')"
+Slave_File="$(mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e 'show master status \G' | grep File | sed -n -e 's/^.*: //p')"
+
+
+echo "sync MASTER >>> SLAVE"
 mysql --host database -uroot -p$MYSQL_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_MASTER_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='mysql-bin.000003',master_log_pos=827;"
 
 
-echo "sync slave to master"
+echo "sync SLAVE >>> MASTER"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_SLAVE_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='mysql-bin.000003',master_log_pos=827;"
 
 
-echo "start sync: master to slave"
+echo "start sync: MASTER to SLAVE"
 mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"start slave;"
 mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"show slave status \G;"
 
 
-echo "start sync: slave to master"
+echo "start sync: SLAVE to MASTER"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"start slave;"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"show slave status \G;"
-
 
 
 #echo "[ ] = increase the max_connections to 2000"
