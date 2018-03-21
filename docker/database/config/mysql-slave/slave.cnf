@@ -6,12 +6,11 @@ datadir=/var/lib/mysql
 
 innodb_flush_log_at_trx_commit = 1
 innodb_flush_method = O_DIRECT
-innodb_buffer_pool_size = 1G
+innodb_buffer_pool_size = 2G
 innodb_log_file_size = 128M
 
-auto_increment_increment=2
-auto_increment_offset=2
+auto_increment_increment = 2
+auto_increment_offset = 2
 
-slave-skip-errors = 1062
 skip-host-cache
 skip-name-resolve
