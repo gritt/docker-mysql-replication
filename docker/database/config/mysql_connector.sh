@@ -8,8 +8,8 @@ sleep 60
 
 
 echo "stopping slave in SLAVE MYSQL"
-mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"stop slave;";
-mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e"reset slave all;";
+mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "stop slave;";
+mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "reset slave all;";
 
 
 echo "stopping slave in MASTER MYSQL"
@@ -49,14 +49,23 @@ mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"c
 
 echo "start sync: MASTER to SLAVE"
 mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "start slave;"
-mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "show slave status \G;"
+mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e "show slave status \G;"
 
 
 echo "start sync: SLAVE to MASTER"
 mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e "start slave;"
-mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e "show slave status \G;"
+mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -e "show slave status \G;"
 
 
-#echo "[ ] = increase the max_connections to 2000"
-#mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e 'set GLOBAL max_connections=2000';
-#mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e 'set GLOBAL max_connections=2000';
+echo "mysql fine tuning and extra conf"
+
+
+echo "increasing connection limit"
+mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "set GLOBAL max_connections=2000;"
+mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e "set GLOBAL max_connections=2000;"
+
+
+echo "disabling sql_mode = ONLY_FULL_GROUP_BY"
+mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -AN -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
+mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
+
