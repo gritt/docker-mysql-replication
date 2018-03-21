@@ -39,12 +39,12 @@ Slave_Position="$(mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e '
 Slave_File="$(mysql --host database -uroot -p$MYSQL_SLAVE_ROOT_PASSWORD -e 'show master status \G' | grep File | sed -n -e 's/^.*: //p')"
 
 
-echo "sync MASTER >>> SLAVE"
-mysql --host database -uroot -p$MYSQL_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_MASTER_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='mysql-bin.000003',master_log_pos=827;"
+echo "set SLAVE to upstream MASTER"
+mysql --host database -uroot -p$MYSQL_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_MASTER_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='$Master_File',master_log_pos=$Master_Position;"
 
 
-echo "sync SLAVE >>> MASTER"
-mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_SLAVE_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='mysql-bin.000003',master_log_pos=827;"
+echo "set MASTER to upstream SLAVE"
+mysql --host $MYSQL_MASTER_ADDRESS -uroot -p$MYSQL_MASTER_ROOT_PASSWORD -AN -e"change master to master_host='$MYSQL_SLAVE_ADDRESS',master_user='$MYSQL_REPLICATION_USER',master_password='$MYSQL_REPLICATION_PASSWORD',master_log_file='$Slave_File',master_log_pos=$Slave_Position;"
 
 
 echo "start sync: MASTER to SLAVE"
