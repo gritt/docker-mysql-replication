@@ -19,4 +19,4 @@ The Master to Master topology enables to perform ‘reads’ and ‘writes’ in
 
 #### Open Source
 
-Fell free use, fork, open issues or pull request with improvements and bug fixes.
+Fell free to use, fork, open issues or pull request with improvements and bug fixes.
